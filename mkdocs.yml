@@ -5,10 +5,9 @@ pages:
   - Download: 'download.md'
   - User Manual:
     - Core tools: 'user-manual/core-tools.md'
-  # - Manual:
-    # - Installation guide: 'manual/install.md'
-    # - User guide: 'manual/userguide.md'
-    # - Developer guide: 'manual/devguide.md'
+    - The plugin system: 'user-manual/plugin-system.md'
+    - Event streaming: 'user-manual/event-streaming.md'
+    - Quality tests: 'user-manual/quality-test.md'
   - References: 'references.md'
   - About:
     - Licence: 'about/licence.md'
@@ -17,3 +16,6 @@ pages:
 
 # theme: mkdocs
 theme_dir: cinder
+
+extra_css:
+  - stylesheet.css
