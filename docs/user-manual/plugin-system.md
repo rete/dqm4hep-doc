@@ -1,7 +1,7 @@
 
 # The plugin system in a nutshell
 
-The plugin system component of the DQM4hep core package has a central place in the software design. The genericity of DQM4hep relies on plugins, that can be loaded at runtime. Parts of the framework can thus easily changed at runtime by specifying a different set of plugins to use.
+The plugin system component of the DQM4hep core package has a central place in the software design. The genericity of DQM4hep relies on plugins that can be loaded at runtime. Parts of the framework can thus be easily changed at runtime by specifying a different set of plugins to use.
 
 This system is composed of only two classes and a registration macro :
 
@@ -238,6 +238,11 @@ or with your own libraries to see what are the compiled plugins :
 # show our two 'shape' plugins
 export DQM4HEP_PLUGIN_DLL=libShapePlugins.so
 dqm4hep-dump-plugins
+******************************************************
+******** Plugin manager -- Registered plugins ********
+** Plugin [class=Circle] : CircleShapePlugin
+** Plugin [class=Square] : SquareShapePlugin
+******************************************************
 ```
 
 
