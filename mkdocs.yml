@@ -8,6 +8,7 @@ pages:
     - The plugin system: 'user-manual/plugin-system.md'
     - Event streaming: 'user-manual/event-streaming.md'
     - Quality tests: 'user-manual/quality-test.md'
+    - Networking: 'user-manual/networking.md'
   - References: 'references.md'
   - About:
     - Licence: 'about/licence.md'
