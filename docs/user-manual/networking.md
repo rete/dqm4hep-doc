@@ -5,33 +5,33 @@ If you use DQM4HEP to analyze data during data taking (online analysis), this is
 
 ## Networking with DIM 
 
-In the current implementation, DQM4HEP uses the DIM (Distributed Information Management) library developed and used by the DELPHI experiment. It is a light and multi-platform library to manage transparently TCP/IP communications. The most powerful feature of this library is the so-called name server. Each  server and services a server provides are mapped by name and not IP address. A central process, called **dns** (DIM name server), takes care about the mapping between service names and IP addresses. The figure below shows the DIM networking architecture.
+In the current implementation, DQM4HEP uses the DIM (Distributed Information Management) library developed and used by the DELPHI experiment. It is a light and multi-platform library to manage transparently TCP/IP communications. The most powerful feature of this library is the so-called name server. Each server and service is mapped by name, not by IP address. A central process, called **dns** (DIM name server), takes care about the mapping between service names and IP addresses. The figure below shows the DIM networking architecture.
 
 <p align="center">
   <img src="../dim-architecture.png" width="80%"/>
 </p>
 
-The name server is a single process instance within a network namespace. It has to be run once and all servers and clients refer to one name server. The two other boxes are the servers and the clients:
+The *dns* is a single process instance within a network namespace. It has to be run once and all servers and clients refer to one *dns*. The two other boxes are the servers and the clients:
 
-- the servers register their services at startup to the name server,
+- the servers register their services at startup to the *dns*,
 - the clients connect to servers with the following steps:
-    - it connects first to the name server and ask for a particular service by name,
-    - the name server send back the IP address of the server providing the service,
+    - it connects first to the *dns* and ask for a particular service by name,
+    - the *dns* send back the IP address of the server providing the service,
     - the client subscribes directly to the service and starts the communication.
 
-For the client side, note that if the service is not registered on the name server, the client will be notified as soon as the service is available again. This makes e.g server transition easier: you shutdown a server and reconnect it on another host. By doing so, all clients will be notified that the host is different without getting a "connection closed" error.
+For the client side, note that if the service is not registered on the *dns*, the client will be notified as soon as the service is available again. This makes e.g server transition easier: you shutdown a server and reconnect it on another host. By doing so, all clients will be notified that the host is different without getting a "connection closed" error.
 
 <div class="warning-msg">
   <i class="fa fa-warning"></i>
-  The name server, the servers and the clients must run on the same network. If a proxy stands in between the client and the server, no connection will be possible, even if the name server if reachable by the client.
+  The *dns*, the servers and the clients must run on the same network. If a proxy stands in between the client and the server, no connection will be possible, even if the *dns* if reachable by the client.
 </div>
 
-By default, the name server listen to the port 2505. When start a server or a client process, the following environment variable can/must be used :
+By default, the *dns* listen to the port 2505. When a server or a client process starts, the following environment variable can/must be used :
 
-- **DIM_DNS_NODE** (mandatory), the host on which the name server is running,
-- **DIM_DNS_PORT** (optional), the port on which the name server is listening. By default 2505,
+- **DIM_DNS_NODE** (mandatory), the host on which the *dns* is running,
+- **DIM_DNS_PORT** (optional), the port on which the *dns* is listening. By default 2505,
 
-As DIM works with name mapping, it decide itself which port to open for communication between servers and clients. The port is defined between **5100 and 6000**. The first free port is tried and will use the next one in case of failure.
+As DIM works with name mapping, it automatically choose which port to open for communication between servers and clients. The port range is defined between **5100 and 6000**. The first free port is tried and will use the next one in case of failure.
 
 ## The implemented patterns
 
@@ -48,7 +48,7 @@ These three patterns are the simplest forms of communication within a network an
 The DIM library uses a single separate thread to handle communications. Within a process:
 
 - only one additional thread is running to communicate,
-- only one port is opened to receive data from either the server/client data or for the name server management.
+- only one port is opened to receive data from either the server/client data or for the *dns* management.
 
 ## DQMNet as a top-level layer
 
@@ -147,7 +147,7 @@ int main() {
 
 The class **MyHandler** defines a simple method that receives a command from a (any) client and print the received message. The method createCommandHandler() takes the command name as first argument, then the address of the object handling the command and its method. Note that the signature of the class method that handles the command **must** be "*void method(const Buffer &)*". If your signature is not correct, the code will not compile, showing an error on the line that create the command handler using the server instance.
 
-If now you want to sent back data to the client, do not use a command handler but a request handler:
+If now you want to send back data to the client, do not use a command handler but a request handler:
 
 
 ```cpp
@@ -195,7 +195,7 @@ int main() {
 }
 ```
 
-The first part of the request handler works in the same way as the command handler. You receive data (request) and the content is simply printed. Sending back is a bit more complex, as the user might want to optimize the memory is handled. In this example, we define string message with a random number (yes, we love random numbers !). Our response will be handled by a buffer model. We first create a model using the factory method *Buffer::createModel< T >* and copy our string response into it. The model is then passed to the response buffer and will be sent back to the client.
+The first part of the request handler works in the same way as the command handler. You receive data (request) and the content is simply printed. Sending back is a bit more complex, as the user might want to optimize the memory he is handling. In this example, we define string message with a random number (yes, we love random numbers !). Our response will be handled by a buffer model. We first create a model using the factory method *Buffer::createModel< T >* and copy our string response into it. The model is then passed to the response buffer and will be sent back to the client.
 
 The memory can be handled in three ways in a model:
 
