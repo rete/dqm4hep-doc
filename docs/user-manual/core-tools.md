@@ -143,9 +143,9 @@ int main() {
 
 By default, in most of the binaries provided by the DQM4hep packages, the main logger is configured to be a colored console.
 
-# Signal mechanism
+# Signal/slot mechanism
 
-The DQM4hep core library provide a class with a similar behavior as the Qt signal/slot mechanism. This is mainly used by the DQM4hep net library to disptach data received through the network to different callback functions, but can be re-used in many contexts. The main API class is *dqm4hep::core::Signal*. The following code illustrates how to use of this class with a simple sender/receive pattern:
+The DQM4hep core library provides a *dqm4hep::core::Signal* class that implements the observer pattern with an API similar to the Qt signal/slot mechanism. The idea is connect a function, or a set of functions, to process when a signal is emitted. These functions can be global functions or class methods. The following code illustrates how to use of the *dqm4hep::core::Signal* class with simple sender/receiver classes:
 
 
 ```cpp
@@ -154,24 +154,20 @@ The DQM4hep core library provide a class with a similar behavior as the Qt signa
 
 using namespace dqm4hep::core;
 
-///< A simple sender class
-///< Send user-defined or random data using signal
+/// A simple sender class
+/// Send user-defined or random data using signal
 class Sender {
-
 public:
   void sendRandom() {
-
     int randomNumber = rand();
     std::stringstream ss; ss << "A random number : " << randomNumber;
-    
     // Emit signal will notify all listeners 
-    m_signal.process( ss.str() );
+    m_signal.emit( ss.str() );
   }
   
   void send(const std::string &data) {
-    
     // Emit signal will notify all listeners 
-    m_signal.process( data );
+    m_signal.emit( data );
   }
   
   Signal<const std::string &>& onSend() {
@@ -182,9 +178,13 @@ private:
   Signal<const std::string &>    m_signal;
 };
 
-///< A simple receiver class
-class Receiver {
+// Example with a global function
+void print(const std::string &data) {
+  dqm_info( "print function received: " + data );
+}
 
+/// A simple receiver class
+class Receiver {
 public:
   void logData(const std::string &data) {
     dqm_info( "Received data: {0}", data );
@@ -193,15 +193,15 @@ public:
 
 
 int main() {
-  
-  // Our main objects
+  // our main objects
   Sender sender;
   Receiver receiver;
   
   // connect the sender signal to the logData() method of the Receiver class
   sender.onSend().connect( &receiver, &Receiver::logData );
-  
-  // send data will call signal.process() and notify the receiver
+  // connect the sender signal to the global print() function
+  sender.onSend().connect( &print );
+  // send data will call signal.emit() and notify the receiver and the global function
   sender.sendRandom();
   sender.send( "Punk is not dead !" );
     
@@ -219,12 +219,13 @@ As c++ is a strongly typed language, the signal template parameters signature ha
 
 Note also that the *dqm4hep::core::Signal* class allows to :
 
-- connect methods from any c++ class.
-- connect methods with unlimited number of arguments. Nevertheless, the parameter types have to be specified in the template arguments of the *dqm4hep::core::Signal* object : 
+- connect methods from any c++ class,
+- connect global functions,
+- disconnect these functions if needed,
+- connect methods or functions with unlimited number of arguments. Nevertheless, the parameter types have to be specified in the template arguments of the *dqm4hep::core::Signal* object : 
 
 ```cpp
   Signal<std::string, int, int, double, float, int> aLongSignal;
 ``` 
-
 
   
