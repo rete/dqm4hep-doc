@@ -109,13 +109,11 @@ int main() {
   if ( mgr->isPluginRegistered( "MyPlugin" ) ) {
 
     // Create an instance of your plugin
-    MyPlugin* plugin = mgr->create<MyPlugin>( "MyPlugin" );
+    auto plugin = mgr->create<MyPlugin>( "MyPlugin" );
 
     // Use it !!
     plugin->helloWorld();
-    
-    // The ownership belongs to the caller
-    delete plugin;    
+    // plugin a shared pointer, meaning no need to delete it 
   }
 
   // Get all registered plugin names (string vector)
@@ -196,9 +194,8 @@ int main(int argc, char** argv) {
   auto mgr = PluginManager::instance();
   THROW_RESULT_IF( STATUS_CODE_SUCCESS, != , mgr->loadLibraries() );
 
-  Shape* shape = mgr->create<Shape>( pluginName );
+  auto shape = mgr->create<Shape>( pluginName );
   shape->draw();
-  delete shape;
 
   return 0;
 }
