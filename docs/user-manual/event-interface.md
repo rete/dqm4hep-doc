@@ -51,7 +51,7 @@ T *Event::getEvent() {
   As c++ is a strongly typed language, you have to make sure that the template parameter type T in the <span style="font-style: italic">"getEvent< T >"</span> method is the same as the one in the new call <span style="font-style: italic">"new EventBase< MyEvent >(event)"</span>.
 </div>
 
-# The event streaming facility
+# The Event streaming facility
 
 The genericity of DQM4hep relies on ability to stream (read/write from/to binary) any kind of event by combining two things :
 
@@ -60,15 +60,15 @@ The genericity of DQM4hep relies on ability to stream (read/write from/to binary
 
 This combination allows to implement a streamer for any event type (interface definition), to compile it as a [plugin](plugin-system.md) in a shared library and load it at runtime (plugin system). This smart mechanism allowed to shape a framework that does not make any assumption on the event format and the way it reads or writes the data.
 
-The class **EventStreamer** is the main interface for streaming event and simply provide three virtual methods to implement :
+The class **EventStreamerPlugin** is the main interface for streaming event and simply provide three virtual methods to implement :
 
 ```cpp
 // factory method to create an event with the correct type
-virtual Event* createEvent() const = 0;
+virtual EventPtr createEvent() const = 0;
 // write an event
-virtual StatusCode write(const Event* const pEvent, xdrstream::IODevice* pDevice) = 0;
+virtual StatusCode write(const EventPtr &event, xdrstream::IODevice* device) = 0;
 // read an event
-virtual StatusCode read(Event* &pEvent, xdrstream::IODevice* pDevice) = 0;
+virtual StatusCode read(EventPtr &event, xdrstream::IODevice* device) = 0;
 ```
 
 All the streaming functionalities are implemented in the [xdrstream](https://github.com/DQM4HEP/xdrstream) package installed with DQM4hep packages while building the software. The class **IODevice** is the main interface for reading/writing raw data from/to a buffer. The different sub-classes of **IODevice** implement *how* the data are streamed, e.g in a buffer, in a file, etc ... Most of the time, the real implementation is a buffer.
@@ -96,12 +96,12 @@ The second step is to implement the streamer. Let's start with the class definit
 
 using namespace dqm4hep::core;
 
-class DeviceEventStreamer : public EventStreamer {
+class DeviceEventStreamer : public EventStreamerPlugin {
 public:
   ~DeviceEventStreamer() {}
-  Event* createEvent() const;
-  StatusCode write(const Event* const pEvent, xdrstream::IODevice* pDevice);
-  StatusCode read(Event* &pEvent, xdrstream::IODevice* pDevice);
+  EventPtr createEvent() const;
+  StatusCode write(const EventPtr &event, xdrstream::IODevice* device);
+  StatusCode read(EventPtr &event, xdrstream::IODevice* device);
 };
 
 // next is the implementation
@@ -110,80 +110,59 @@ public:
 We first include our event definition and the event streamer from DQM4hep. The class definition is really simple. Let's write the implementation, step by step.
 
 ```cpp
-Event* DeviceEventStreamer::createEvent() const {
-  
-  DeviceEvent* devEvt = new DeviceEvent(); 
-  Event* event = new EventBase<DeviceEvent>(devEvt);
-  return event;
+EventPtr DeviceEventStreamer::createEvent() const {
+  return Event::create<DeviceEvent>();
 }
 ```
 
 The first line creates our event and the second wraps it into a DQM4hep event instance. Simple.
 
 ```cpp
-StatusCode DeviceEventStreamer::write(const Event* const pEvent, xdrstream::IODevice* pDevice) {
-  
-  const DeviceEvent* devEvt = pEvent->getEvent<DeviceEvent>();
-
-  if(nullptr == devEvt)
+StatusCode DeviceEventStreamer::write(const EventPtr &event, xdrstream::IODevice* device) {
+  const DeviceEvent* devEvt = event->getEvent<DeviceEvent>();
+  if(nullptr == devEvt) {
     return STATUS_CODE_INVALID_PARAMETER;
-  
-  // write all the properties of the DQM4hep event definition
-  if( ! XDR_TESTBIT( pEvent->writeBase( pDevice ) , xdrstream::XDR_SUCCESS ) )
-    return STATUS_CODE_FAILURE;
-    
+  }    
   // write temperature
-  if( ! XDR_TESTBIT( pDevice->write<float>( & devEvt->m_temperature ), xdrstream::XDR_SUCCESS ) )
+  if(not XDR_TESTBIT( device->write<float>(&devEvt->m_temperature), xdrstream::XDR_SUCCESS ) ) {
     return STATUS_CODE_FAILURE;
-    
+  }  
   // write pressure
-  if( ! XDR_TESTBIT( pDevice->write<float>( & devEvt->m_pressure ), xdrstream::XDR_SUCCESS ) )
+  if(not XDR_TESTBIT( device->write<float>(&devEvt->m_pressure), xdrstream::XDR_SUCCESS ) ) {
     return STATUS_CODE_FAILURE;
-  
+  }
   return STATUS_CODE_SUCCESS;
 }
 ```
 
-The three first line simply check if the event type is correctly passed to the streamer method. 
-
-On the fourth line, we write the event properties from the DQM4hep event. 
-
-<div class="info-msg">
-  <i class="fa fa-info-circle"></i>
-  It is not mandatory to write the properties from the base class but highly recommended. If you want to optimize the buffer size, you might not need to call the writeBase() method.
-</div>
-
+The first lines simply check if the event type is correctly passed to the streamer method. 
 The next two lines simply write the temperature and pressure using the IO device. That's all ! 
 
 For the read method, similar operations are performed.
 
 ```cpp
-StatusCode DeviceEventStreamer::read(Event*& pEvent, xdrstream::IODevice* pDevice) {
-
-  pEvent = this->createEvent();
-  DeviceEvent* devEvt = pEvent->getEvent<DeviceEvent>();
-  
-  // read all the properties of the DQM4hep event definition
-  if( ! XDR_TESTBIT( pEvent->readBase( pDevice ) , xdrstream::XDR_SUCCESS ) )
-    return STATUS_CODE_FAILURE;
-    
+StatusCode DeviceEventStreamer::read(EventPtr& event, xdrstream::IODevice* device) {
+  DeviceEvent* devEvt = event->getEvent<DeviceEvent>();
+  if(nullptr == devEvt) {
+    return STATUS_CODE_INVALID_PARAMETER;
+  }  
   // read temperature
-  if( ! XDR_TESTBIT( pDevice->read<float>( & devEvt->m_temperature ), xdrstream::XDR_SUCCESS ) )
+  if(not XDR_TESTBIT( pDevice->read<float>(&devEvt->m_temperature), xdrstream::XDR_SUCCESS ) ) {
     return STATUS_CODE_FAILURE;
-    
+  }    
   // read pressure
-  if( ! XDR_TESTBIT( pDevice->read<float>( & devEvt->m_pressure ), xdrstream::XDR_SUCCESS ) )
+  if(not XDR_TESTBIT( pDevice->read<float>(&devEvt->m_pressure), xdrstream::XDR_SUCCESS ) ) {
     return STATUS_CODE_FAILURE;
-  
+  }
   return STATUS_CODE_SUCCESS;
 }
 ```
 
-This method assumes you have to allocate a new event. Note also the (re)use of the factory method createEvent() to create this event instance. The read method calls are very similar to the write ones in the DeviceEventStreamer::write() method above.
+The read and write are finally in their syntaxes.
 
 That's all ! 
 
-Only remains the plugin declaration; don't forget it !
+Only remains the plugin declaration: don't forget it !
 
 ```cpp
 DQM_PLUGIN_DECL( DeviceEventStreamer, "DeviceEventStreamer" );
@@ -199,67 +178,54 @@ Here after is the full file:
 
 using namespace dqm4hep::core;
 
-class DeviceEventStreamer : public EventStreamer {
+class DeviceEventStreamer : public EventStreamerPlugin {
 public:
   ~DeviceEventStreamer() {}
-  Event* createEvent() const;
-  StatusCode write(const Event* const pEvent, xdrstream::IODevice* pDevice);
-  StatusCode read(Event* &pEvent, xdrstream::IODevice* pDevice);
+  EventPtr createEvent() const;
+  StatusCode write(const EventPtr &event, xdrstream::IODevice* device);
+  StatusCode read(EventPtr &event, xdrstream::IODevice* device);
 };
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 
-Event* DeviceEventStreamer::createEvent() const {
-  
-  DeviceEvent* devEvt = new DeviceEvent(); 
-  Event* event = new EventBase<DeviceEvent>(devEvt);
-  return event;
+EventPtr DeviceEventStreamer::createEvent() const {
+  return Event::create<DeviceEvent>();
 }
 
 //------------------------------------------------------------------------------
 
-StatusCode DeviceEventStreamer::write(const Event* const pEvent, xdrstream::IODevice* pDevice) {
-  
-  const DeviceEvent* devEvt = pEvent->getEvent<DeviceEvent>();
-
-  if(nullptr == devEvt)
+StatusCode DeviceEventStreamer::write(const EventPtr &event, xdrstream::IODevice* device) {
+  const DeviceEvent* devEvt = event->getEvent<DeviceEvent>();
+  if(nullptr == devEvt) {
     return STATUS_CODE_INVALID_PARAMETER;
-  
-  // write all the properties of the DQM4hep event definition
-  if( ! XDR_TESTBIT( pEvent->writeBase( pDevice ) , xdrstream::XDR_SUCCESS ) )
-    return STATUS_CODE_FAILURE;
-    
+  }    
   // write temperature
-  if( ! XDR_TESTBIT( pDevice->write<float>( & devEvt->m_temperature ), xdrstream::XDR_SUCCESS ) )
+  if(not XDR_TESTBIT( device->write<float>(&devEvt->m_temperature), xdrstream::XDR_SUCCESS ) ) {
     return STATUS_CODE_FAILURE;
-    
+  }  
   // write pressure
-  if( ! XDR_TESTBIT( pDevice->write<float>( & devEvt->m_pressure ), xdrstream::XDR_SUCCESS ) )
+  if(not XDR_TESTBIT( device->write<float>(&devEvt->m_pressure), xdrstream::XDR_SUCCESS ) ) {
     return STATUS_CODE_FAILURE;
-  
+  }
   return STATUS_CODE_SUCCESS;
 }
 
 //------------------------------------------------------------------------------
 
-StatusCode DeviceEventStreamer::read(Event*& pEvent, xdrstream::IODevice* pDevice) {
-
-  pEvent = this->createEvent();
-  DeviceEvent* devEvt = pEvent->getEvent<DeviceEvent>();
-  
-  // read all the properties of the DQM4hep event definition
-  if( ! XDR_TESTBIT( pEvent->readBase( pDevice ) , xdrstream::XDR_SUCCESS ) )
-    return STATUS_CODE_FAILURE;
-    
+StatusCode DeviceEventStreamer::read(EventPtr& event, xdrstream::IODevice* device) {
+  DeviceEvent* devEvt = event->getEvent<DeviceEvent>();
+  if(nullptr == devEvt) {
+    return STATUS_CODE_INVALID_PARAMETER;
+  }  
   // read temperature
-  if( ! XDR_TESTBIT( pDevice->read<float>( & devEvt->m_temperature ), xdrstream::XDR_SUCCESS ) )
+  if(not XDR_TESTBIT( pDevice->read<float>(&devEvt->m_temperature), xdrstream::XDR_SUCCESS ) ) {
     return STATUS_CODE_FAILURE;
-    
+  }    
   // read pressure
-  if( ! XDR_TESTBIT( pDevice->read<float>( & devEvt->m_pressure ), xdrstream::XDR_SUCCESS ) )
+  if(not XDR_TESTBIT( pDevice->read<float>(&devEvt->m_pressure), xdrstream::XDR_SUCCESS ) ) {
     return STATUS_CODE_FAILURE;
-  
+  }
   return STATUS_CODE_SUCCESS;
 }
 
@@ -267,6 +233,32 @@ StatusCode DeviceEventStreamer::read(Event*& pEvent, xdrstream::IODevice* pDevic
 
 DQM_PLUGIN_DECL( DeviceEventStreamer, "DeviceEventStreamer" );
 ```
+
+Finally, you can use this streamer using the *EventStreamer* class:
+
+```cpp
+// Create an event
+EventPtr event = Event::create<DeviceEvent>();
+// Set the event streamer name to use in the next steps 
+event->setStreamerName("DeviceEventStreamer");
+//
+// ... work with event ...
+//
+// Our actual streamer toy
+EventStreamer writeStreamer;
+// A buffer with 1 Mo to start
+xdrstream::BufferDevice writeBuffer(1024*1024);
+// Write the event in the buffer
+writeStreamer.writeEvent(event, &writeBuffer);
+
+// This reads back our event from the same raw buffer
+EventStreamer readStreamer;
+xdrstream::BufferDevice readBuffer(writeBuffer.getBuffer(), writeBuffer.getPosition(), true);
+EventPtr eventBack = nullptr;
+readStreamer.readEvent(eventBack, &readBuffer);
+```
+
+Note that for the last line, the event streamer name is read on-the-fly in the buffer in order to find the correct plugin to use for reading out event. 
 
 For a more complete documentation on xdrstream, please look on the [project page](https://github.com/DQM4HEP/xdrstream).
 
