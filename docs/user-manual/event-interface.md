@@ -262,7 +262,96 @@ Note that for the last line, the event streamer name is read on-the-fly in the b
 
 For a more complete documentation on xdrstream, please look on the [project page](https://github.com/DQM4HEP/xdrstream).
 
-# The GenericEvent class
+# Reading events from files
+
+As the DQM4hep framework is "event implementation agnostic", there is no implementation of file reader. Instead, we provide an interface that, again, can be used together with the [plugin system](plugin-system.md). The base class of all file readers is *dqm4hep::core::EventReader*. The following virtual methods have to re-implemented in order to use an instance of file reader:
+
+```cpp
+virtual core::StatusCode open(const std::string &fname) = 0;
+virtual core::StatusCode skipNEvents(int nEvents) = 0;
+virtual core::StatusCode runInfo(core::Run &run) = 0;
+virtual core::StatusCode readNextEvent() = 0;
+virtual core::StatusCode close() = 0;
+```
+
+The `open()` function, as it suggests, instruct your reader to open a new file, and the `close()` method to close it. The `skipNEvents()` asks your reader to skip the N next events from the current position in your file. If your internal event reader does not provide such a function, it is still possible to read the N next event and throw them: 
+
+```cpp
+StatusCode MyReader::skipNEvents(int nevents) {
+  for(int e=0 ; e<nevents ; e++) {
+    // hypotetical function to read an event from your file
+    MyEventType* event = this->performReaderEvent(); 
+  }
+  return STATUS_CODE_SUCCESS;
+}
+```  
+
+Very often, event data model libraries provides a mechanism to efficiently skip N events from a file without having to unpack events one by one as it done in the example above.
+The `runInfo()` instruct the reader to find the run information related to the file currently being read. If such an information is not available, it is still possible to provide dummy information.
+
+```cpp
+StatusCode MyReader::runInfo(Run &runInfo) {
+  runInfo.setRunNumber( this->fileRunNumber() );
+  runInfo.setDetectorName( this->fileDetectorName() );
+  runInfo.setStartTime( core::fromTime_t(this->fileStartOfRunTime()) );
+  return STATUS_CODE_SUCCESS;
+}
+```
+
+The `readNextEvent()` function is used for read a single event from the file. The read event has to be sent using the [signal](core-tools.md) `onEventRead()`. When the end of file is reached, the status code *STATUS_CODE_OUT_OF_RANGE* has to be returned.
+
+Example:
+
+```cpp
+StatusCode MyReader::readNextEvent() {
+  // hypotetical function to read an event from your file
+  MyEventType* event = this->performReaderEvent();
+  if(nullptr == event) {
+    // Out of range means end of file is reached !
+    return STATUS_CODE_OUT_OF_RANGE;
+  }
+  // wrap your event into a DQM4hep event
+  EventPtr eventPtr = Event::create<MyEventType>(event);
+  // send the signal to all listeners
+  onEventRead().emit(eventPtr);
+  return STATUS_CODE_SUCCESS;
+}
+```
+
+Here after is a typical use of the event reader class:
+
+```cpp
+// Our event consumer function
+void printEvent(EventPtr event) {
+  dqm_info( "Read event no {0}", event->getEventNumber() );
+}
+
+auto eventReader = PluginManager::instance()->create<EventReader>("DatEventReader");
+// open a file
+eventReader->open("superfile.dat");
+// Read run info
+Run runInfo;
+eventReader->runInfo(runInfo);
+dqm_info( "Read run info : {0}", dqm4hep::core::typeToString(runInfo) );
+// optional: skip 2 first events
+eventReader->skipNEvents(2);
+eventReader->onEventRead().connect(&printEvent);
+
+while(1) {
+  auto code = eventReader->readNextEvent();
+  if(STATUS_CODE_OUT_OF_RANGE == code) {
+    dqm_info( "Reached end of file" );
+    break;
+  }
+  if(STATUS_CODE_SUCCESS != code) {
+    dqm_error( "Error while reading file: {0}", statusCodeToString(code) );
+    break;
+  }
+}
+eventReader->close();
+```
+
+# A builtin event type: GenericEvent
 
 In case you are working on a small setup and you don't want to write your own event streamer, you can use our built-in event implementation (**GenericEvent**) and its associated streamer (**GenericEventStreamer**). The event holds maps of different types: integer, float, double and string.
 
