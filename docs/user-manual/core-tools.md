@@ -228,4 +228,63 @@ Note also that the *dqm4hep::core::Signal* class allows to :
   Signal<std::string, int, int, double, float, int> aLongSignal;
 ``` 
 
-  
+# Status code and useful pre-processor macros
+
+If you navigate through the DQM4hep code, you will notice the use of the *StatusCode* enum, the *StatusCodeException* and pre-processor macros such as *RETURN_RESULT_IF()*.
+The *StatusCode* enum contains the folowing values:
+
+```cpp
+enum StatusCode {
+  STATUS_CODE_SUCCESS,
+  STATUS_CODE_FAILURE,
+  STATUS_CODE_NOT_FOUND,
+  STATUS_CODE_NOT_INITIALIZED,
+  STATUS_CODE_ALREADY_INITIALIZED,
+  STATUS_CODE_ALREADY_PRESENT,
+  STATUS_CODE_OUT_OF_RANGE,
+  STATUS_CODE_NOT_ALLOWED,
+  STATUS_CODE_INVALID_PARAMETER,
+  STATUS_CODE_UNCHANGED,
+  STATUS_CODE_INVALID_PTR
+};
+```
+
+The *StatusCodeException* exception class handle one of these status codes on creation. Together with the StatusCode enum are also defined the following pre-processor macros:
+
+- *RETURN_RESULT_IF(code, Operator, Command)*: return the status code returned by the command if the comparison code with *code* using the operator *Operator* fails. See example below.
+- *RETURN_RESULT_IF_AND_IF(code, code2, Operator, Command)*: return the status code returned by the command if the comparison code with *code* and *code2* using the operator *Operator* fails.
+- *THROW_RESULT_IF(code, Operator, Command)*: throw a *StatusCodeException* with the status code returned by the command if the comparison code with *code* using the operator *Operator* fails.
+- *THROW_RESULT_IF_AND_IF(code, code2, Operator, Command)*: throw a *StatusCodeException* with the status code returned by the command if the comparison code with *code* and *code2* using the operator *Operator* fails.
+ 
+Example:
+
+```cpp
+StatusCode myFunction(int i) {
+  if(i > 0) {
+    return STATUS_CODE_SUCCESS;
+  }
+  else {
+    return STATUS_CODE_INVALID_PARAMETER;
+  }
+}
+
+void doIt() {
+  try {
+    THROW_RESULT_IF(STATUS_CODE_SUCCESS, !=, myFunction(42));
+    THROW_RESULT_IF(STATUS_CODE_SUCCESS, !=, myFunction(-1)); // this will throw an exception
+  }
+  catch(StatusCodeException &exception) {
+    dqm_error( "Caught a StatusCodeException: {0}", exception.toString() );
+  }
+}
+```
+
+The following message will be printed-out in the console:
+
+```shell
+myFunction(42) return STATUS_CODE_INVALID_PARAMETER
+    in function: doIt
+    in file:     /path/to/toto.cc line#: 75
+```
+
+These macros are particuliarly useful to debug a huge stack trace by following the function call by function name, file and line call.
