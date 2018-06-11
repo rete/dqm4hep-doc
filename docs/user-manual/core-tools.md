@@ -288,3 +288,84 @@ myFunction(42) return STATUS_CODE_INVALID_PARAMETER
 ```
 
 These macros are particuliarly useful to debug a huge stack trace by following the function call by function name, file and line call.
+
+# The XML parser
+
+One of the nice components of the DQM4hep core library is the XML parser. It uses the [tinyxml](http://www.grinninglizard.com/tinyxml/) library to internally parse a XML document. On top of that comes a certain number of features that modifies the XML tree in memory after parsing listed here after.
+
+## XML parsing features
+
+### XML file includes
+
+
+### XML constants
+
+
+### MySQL database parameter select
+
+
+### Use of environment variables
+
+
+### XML for loops
+
+The element `<for>` allows to run a simple for loop and duplicate XML elements. To keep it simple, the loop is run over integer id (`id`) from a lower value (`begin`) to an upper value (`end`) with a user defined increment (`increment`). A for loop is run over the whole content of the `<for>` element, look for the string "$FOR{*id*}" and replace it by the current loop value. The replacement operates on:
+
+- the XML comments content
+- all the XML element attributes
+- the XML texts
+
+Example:
+```xml
+<root>
+  <for id="count" begin="0" end="3" increment="1">
+    <!-- The current value of the counter is $FOR{count} -->
+    <counter value="$FOR{count}"/>
+  </for>
+</root>
+```
+
+will be replaced by:
+```xml
+<root>
+  <!-- The current value of the counter is 0 -->
+  <counter value="0"/>
+  <!-- The current value of the counter is 1 -->
+  <counter value="1"/>
+  <!-- The current value of the counter is 2 -->
+  <counter value="2"/>
+  <!-- The current value of the counter is 3 -->
+  <counter value="3"/>
+</root>
+```
+
+By construction, it is also possible the run nested for loops by changing the loop id:
+
+```xml
+<root>
+  <for id="x" begin="0" end="2" increment="1">
+    <for id="y" begin="0" end="2" increment="1">
+      <entry x="$FOR{x}" y="$FOR{y}"/>
+    </for>
+  </for>
+</root>
+```
+
+will be replaced by:
+
+```xml
+<root>
+  <entry x="0" y="0"/>
+  <entry x="0" y="1"/>
+  <entry x="0" y="2"/>
+  <entry x="1" y="0"/>
+  <entry x="1" y="1"/>
+  <entry x="1" y="2"/>
+  <entry x="2" y="0"/>
+  <entry x="2" y="1"/>
+  <entry x="2" y="2"/>
+</root>
+```
+
+## XML parsing ordering
+
