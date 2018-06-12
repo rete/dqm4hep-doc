@@ -114,8 +114,7 @@ EventPtr DeviceEventStreamer::createEvent() const {
   return Event::create<DeviceEvent>();
 }
 ```
-
-The first line creates our event and the second wraps it into a DQM4hep event instance. Simple.
+This creates an event that wraps our event definition. Simple.
 
 ```cpp
 StatusCode DeviceEventStreamer::write(const EventPtr &event, xdrstream::IODevice* device) {
