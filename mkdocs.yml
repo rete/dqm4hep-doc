@@ -6,7 +6,7 @@ pages:
   - User Manual:
     - Core tools: 'user-manual/core-tools.md'
     - The plugin system: 'user-manual/plugin-system.md'
-    - Event streaming: 'user-manual/event-streaming.md'
+    - Event interface: 'user-manual/event-interface.md'
     - Quality tests: 'user-manual/quality-test.md'
     - Networking: 'user-manual/networking.md'
   - References: 'references.md'
@@ -15,8 +15,7 @@ pages:
     - Contact: 'about/contact.md'
     - Contribute: 'about/contribute.md'
 
-# theme: mkdocs
-theme_dir: cinder
+theme: readthedocs
 
 extra_css:
   - stylesheet.css
