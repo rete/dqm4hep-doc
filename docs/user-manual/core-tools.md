@@ -1,10 +1,10 @@
 
 
-# The logging library
+# The logging tools
 
-The logging library is currently based on the super-fast logging library [spdlog](https://github.com/gabime/spdlog). It is faster than most of the c++ logging library, threadsafe and really easy to use.
+The logging tools are currently based on the super-fast logging library [spdlog](https://github.com/gabime/spdlog). It is faster than most of the c++ logging library, header-only, threadsafe and really easy to use.
 
-DQM4hep have defined simple macros that allows you to log from any piece of code, with different log levels. You just need to include the file *dqm4hep/Logging.h* to use them. Here is a simple example demonstrating its use :
+DQM4hep defines simple macros that allows you to log from any piece of code, with different log levels. You just need to include the file *dqm4hep/Logging.h* to use them. Here is a simple example demonstrating its use :
 
 ```cpp
 #include <dqm4hep/Logging.h>
@@ -145,7 +145,7 @@ By default, in most of the binaries provided by the DQM4hep packages, the main l
 
 # Signal/slot mechanism
 
-The DQM4hep core library provides a *dqm4hep::core::Signal* class that implements the observer pattern with an API similar to the Qt signal/slot mechanism. The idea is connect a function, or a set of functions, to process when a signal is emitted. These functions can be global functions or class methods. The following code illustrates how to use of the *dqm4hep::core::Signal* class with simple sender/receiver classes:
+The DQM4hep core library provides a *dqm4hep::core::Signal* class that implements the observer pattern with an API similar to the Qt signal/slot mechanism. In contay to the Qt framework, the signal/slot mechanism described here is more likely a tool than a base framework functionality. The idea is to connect a function, or a set of functions, to process when a signal is emitted. These functions can be global functions or class methods. The following code illustrates how to use of the *dqm4hep::core::Signal* class with simple sender/receiver classes:
 
 
 ```cpp
