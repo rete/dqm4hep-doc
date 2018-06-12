@@ -291,21 +291,128 @@ These macros are particuliarly useful to debug a huge stack trace by following t
 
 # The XML parser
 
-One of the nice components of the DQM4hep core library is the XML parser. It uses the [tinyxml](http://www.grinninglizard.com/tinyxml/) library to internally parse a XML document. On top of that comes a certain number of features that modifies the XML tree in memory after parsing listed here after.
+One of the nice components of the DQM4hep core library is the XML parser. It uses the [tinyxml](http://www.grinninglizard.com/tinyxml/) library to internally parse a XML document. On top of that comes a certain number of features that modifies the XML tree in memory after parsing listed below.
 
 ## XML parsing features
 
 ### XML file includes
 
+The element `<include>` allows to include an other XML file in-place of the element. The attribute `ref` of the XML element points on a XML using either an absolute or relative path. If a relative path is used, it is relative to the file containing the XML include element. By default, the XML also process nested include elements, meaning that *file1.xml* can include *file2.xml* that can also includes *file3.xml*.
+
+<div class="warning-msg">
+  <i class="fa fa-warning"></i>
+  No check is perform to protect against infinite recursive includes. It is users responsability to check the file consistency before using the XML file parser.
+</div>
+
+The `<include>` elements can be placed anywhere in the XML tree.
+Example:
+
+```xml
+<!-- Main XML file: main.xml -->
+<dqm4hep>
+  <!-- Any user custom element -->
+  <custom>
+    <include ref="file2.xml" />
+  </custom>
+</dqm4hep>
+```
+
+```xml
+<!-- file2.xml -->
+<dqm4hep>
+  <entry id="toto"/>
+  <entry id="titi"/>
+  <entry id="tata"/>
+</dqm4hep>
+```
+
+This will result to:
+
+```xml
+<!-- Main XML file after processing -->
+<dqm4hep>
+  <!-- Any user custom element -->
+  <custom>
+    <entry id="toto"/>
+    <entry id="titi"/>
+    <entry id="tata"/>
+  </custom>
+</dqm4hep>
+```
+
+<div class="info-msg">
+  <i class="fa fa-info"></i>
+  Note that in the included file file1.xml the root element has to be `<dqm4hep>`. Every element contained in this root element will be **literally** copied in-place of the `<include>` element. Note also that the nested elements are processed on include directly.
+</div>
 
 ### XML constants
 
+The DQM4hep XML parser offers the possibility to define constants in the XML file and to re-use them. These constants are defined in the root element `<dqm4hep>` in dedicated section called `<constants>`. Each constant is defined in a single XML element `<constant>` labeled with a `name` and a `value`.
+
+Example:
+
+```xml
+<dqm4hep>
+  <constants>
+    <constant name="MyInteger" value="42"/>
+    <constant name="ATitle" value="This is a title"/>
+  </constants>
+</dqm4hep>
+```
+
+A constant can't be defined twice and an exception will be thrown in this case. These constants can be re-used further in the XML file inside element attributes or inside XML text using the syntax `${name}` where `name` is a constant name.
+
+Example:
+
+
+```xml
+<dqm4hep>
+  
+  <constants>
+    <constant name="MyInteger" value="42"/>
+    <constant name="ATitle" value="This is a title"/>
+    <!-- Constants can be used in constants definition ! -->
+    <constant name="Answer" value="The answer of everything is ${MyInteger}"/>
+  </constants>
+  
+  <!-- Constant in an element attribute -->
+  <custom start="${MyInteger}"/>
+  
+  <!-- Constant in a text -->
+  <quote> This is movie reference : ${Answer} </quote>
+  
+</dqm4hep>
+```
 
 ### MySQL database parameter select
 
+To be done - requires documentation on MySQL parameter database and tables ...
 
 ### Use of environment variables
 
+Constants are a nice feature of the DQM4hep XML parser but can sometimes be a problem when users are dealing with passwords and other private sensitive data such API tokens. Environment variables are often use to deal with this problem as they are defined locally in your shell and thus not accessible you opening and reading the XML file in an editor. The XML parser can use environment variables by using a similar syntax as for constants (see above) with `$ENV{var}` where `var` is an environment variable.
+
+Example:
+
+```xml
+<dqm4hep>
+  <!-- Oops ! Password hardcoded... -->
+  <login user="Arthur" password="Cuillere"/>
+</dqm4hep>
+```
+
+then use an environment variable instead:
+
+```xml
+<dqm4hep>
+  <login user="Arthur" password="$ENV{LOGIN_PASS}"/>
+</dqm4hep>
+```
+
+<div class="warning-msg">
+  <i class="fa fa-warning"></i>
+  Don't forget to export the referenced environment variables before using the XML parser as you will get an exception if they are not defined !
+</div>
 
 ### XML for loops
 
@@ -317,17 +424,17 @@ The element `<for>` allows to run a simple for loop and duplicate XML elements. 
 
 Example:
 ```xml
-<root>
+<dqm4hep>
   <for id="count" begin="0" end="3" increment="1">
     <!-- The current value of the counter is $FOR{count} -->
     <counter value="$FOR{count}"/>
   </for>
-</root>
+</dqm4hep>
 ```
 
 will be replaced by:
 ```xml
-<root>
+<dqm4hep>
   <!-- The current value of the counter is 0 -->
   <counter value="0"/>
   <!-- The current value of the counter is 1 -->
@@ -336,25 +443,25 @@ will be replaced by:
   <counter value="2"/>
   <!-- The current value of the counter is 3 -->
   <counter value="3"/>
-</root>
+</dqm4hep>
 ```
 
 By construction, it is also possible the run nested for loops by changing the loop id:
 
 ```xml
-<root>
+<dqm4hep>
   <for id="x" begin="0" end="2" increment="1">
     <for id="y" begin="0" end="2" increment="1">
       <entry x="$FOR{x}" y="$FOR{y}"/>
     </for>
   </for>
-</root>
+</dqm4hep>
 ```
 
 will be replaced by:
 
 ```xml
-<root>
+<dqm4hep>
   <entry x="0" y="0"/>
   <entry x="0" y="1"/>
   <entry x="0" y="2"/>
@@ -364,8 +471,102 @@ will be replaced by:
   <entry x="2" y="0"/>
   <entry x="2" y="1"/>
   <entry x="2" y="2"/>
-</root>
+</dqm4hep>
 ```
 
+The `<for>` element attributes possible values are summurized in table below. 
+ 
+Attribute | Type    | Optional ? | Default value
+--------- | ------- | ---------- | -------------
+id        | string  | false      | - 
+begin     | integer | false      | - 
+end       | integer | false      | -
+increment | integer | true       | 1
+
 ## XML parsing ordering
+
+The XML file is processed in the given order:
+
+- Includes resolution
+- Constants and environment variables
+- Database connections and parameter select
+- For loops
+
+This has the following effects:
+
+1. Constants and environment variables can be used in database connections and for loops
+2. As includes are processed before constants, the `ref` attribute of the `<include>` element can not refer to any constant. In this case the constant will not replaced and the file will not been included.
+3. As constants are processed after includes, it possible to define constants in an included file. The `<constants>` section in the included file has to be defined in the root element and the `<include>` element in the main file has to be defined in the root element.
+
+## Using the XMLParser class
+
+The `XMLParser` class is part of the DQMCore distribution and can be included using the directive:
+
+```cpp
+#include <dqm4hep/XMLParser.h>
+using XMLParser = dqm4hep::core::XMLParser;
+```
+
+To parse an XML file, use the method `XMLParser::parse()`:
+
+```cpp
+XMLParser parser;
+try {
+  parser.parse("myfile.xml");
+}
+catch(StatusCodeException &exception) {
+  dqm_error( "Caught StatusCodeException while parsing XML file: {0}", exception.toString() );
+}
+```
+
+The XML document itself can be accessed with the method `XMLParser::document()`:
+
+```cpp
+auto document = parser.document();
+```
+
+All of the features listed above are by default active but can be de-activated using dedicated method. The example below shows how to de-activate all the features listed above. 
+
+```cpp
+XMLParser parser;
+
+// disable all includes resolution
+parser.setProcessIncludes(false);
+
+// disable nested includes
+// only useful if we keep the option setProcessIncludes to true
+parser.setAllowNestedIncludes(false);
+
+// disable constants parsing
+parser.setProcessConstants(false);
+
+// disable database connect and parameters select resolution
+parser.setProcessDatabase(false);
+
+// disable environment variable resolution
+parser.setAllowEnvVariables(false);
+
+// disable for loops resolution
+parser.setProcessForLoops(false);
+```
+
+If the constants parsing has been activated before parsing the XML file, the parsed constants can be accessed after parsing:
+
+```
+XMLParser parser:
+parser.parse("myfile.xml");
+
+// access all constants
+auto constants = parser.constants();
+
+for(auto &constant : constants) {
+  std::cout << "constant: name=" << constant.first << ", value=" << constant.second << std::endl;
+}
+
+// access single constant
+// the second argument is a fallback value if the constant doesn't exists
+auto integer = parser.constant<int>("MyInteger", 42);
+
+std::cout << "Constant MyInteger, value: " << integer << std::endl;
+```
 
