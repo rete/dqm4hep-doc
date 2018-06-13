@@ -145,7 +145,7 @@ By default, in most of the binaries provided by the DQM4hep packages, the main l
 
 # Signal/slot mechanism
 
-The DQM4hep core library provides a *dqm4hep::core::Signal* class that implements the observer pattern with an API similar to the Qt signal/slot mechanism. In contay to the Qt framework, the signal/slot mechanism described here is more likely a tool than a base framework functionality. The idea is to connect a function, or a set of functions, to process when a signal is emitted. These functions can be global functions or class methods. The following code illustrates how to use of the *dqm4hep::core::Signal* class with simple sender/receiver classes:
+The DQM4hep core library provides a *dqm4hep::core::Signal* class that implements the observer pattern with an API similar to the Qt signal/slot mechanism. In contrary to the Qt framework, the signal/slot mechanism described here is more likely a tool than a base framework functionality. The idea is to process a function, or a set of functions, when a signal is emitted. These functions can be global functions or class methods. The following code illustrates how to use of the *dqm4hep::core::Signal* class with simple sender/receiver classes:
 
 
 ```cpp
@@ -301,7 +301,7 @@ The element `<include>` allows to include an other XML file in-place of the elem
 
 <div class="warning-msg">
   <i class="fa fa-warning"></i>
-  No check is perform to protect against infinite recursive includes. It is users responsability to check the file consistency before using the XML file parser.
+  No check is performed to protect against infinite recursive includes. It is users responsability to check the file consistency before using the XML file parser.
 </div>
 
 The `<include>` elements can be placed anywhere in the XML tree.
@@ -390,7 +390,7 @@ To be done - requires documentation on MySQL parameter database and tables ...
 
 ### Use of environment variables
 
-Constants are a nice feature of the DQM4hep XML parser but can sometimes be a problem when users are dealing with passwords and other private sensitive data such API tokens. Environment variables are often use to deal with this problem as they are defined locally in your shell and thus not accessible you opening and reading the XML file in an editor. The XML parser can use environment variables by using a similar syntax as for constants (see above) with `$ENV{var}` where `var` is an environment variable.
+Constants are a nice feature of the DQM4hep XML parser but can sometimes be a problem when users are dealing with passwords and other private sensitive data such as API tokens. Environment variables are often used to deal with this problem as they are defined locally in your shell and thus not accessible when opening the XML file in an editor. The XML parser can use environment variables by using a similar syntax as for constants (see above) with `$ENV{var}` where `var` is an environment variable.
 
 Example:
 
@@ -446,7 +446,7 @@ will be replaced by:
 </dqm4hep>
 ```
 
-By construction, it is also possible the run nested for loops by changing the loop id:
+By construction, it is also possible to make nested for loops by changing the loop id:
 
 ```xml
 <dqm4hep>
@@ -474,7 +474,7 @@ will be replaced by:
 </dqm4hep>
 ```
 
-The `<for>` element attributes possible values are summurized in table below. 
+Possible values for the `<for>` element attribute are summarized in the table below.
  
 Attribute | Type    | Optional ? | Default value
 --------- | ------- | ---------- | -------------
@@ -495,8 +495,8 @@ The XML file is processed in the given order:
 This has the following effects:
 
 1. Constants and environment variables can be used in database connections and for loops
-2. As includes are processed before constants, the `ref` attribute of the `<include>` element can not refer to any constant. In this case the constant will not replaced and the file will not been included.
-3. As constants are processed after includes, it possible to define constants in an included file. The `<constants>` section in the included file has to be defined in the root element and the `<include>` element in the main file has to be defined in the root element.
+2. As includes are processed before constants, the `ref` attribute of the `<include>` element can not refer to any constant. In this case, the constant will not be replaced and the file will not be included.
+3. As constants are processed after includes, it is possible to define constants in an included file. The `<constants>` section in the included file has to be defined in the root element and the `<include>` element in the main file has to be defined in the root element.
 
 ## Using the XMLParser class
 
@@ -525,7 +525,9 @@ The XML document itself can be accessed with the method `XMLParser::document()`:
 auto document = parser.document();
 ```
 
-All of the features listed above are by default active but can be de-activated using dedicated method. The example below shows how to de-activate all the features listed above. 
+All of the features listed above are by default active but can be de-activated using dedicated methods. 
+A warning is sent to the logger when a feature is manually deactivated. 
+The example below shows how to de-activate all the features listed above. 
 
 ```cpp
 XMLParser parser;
