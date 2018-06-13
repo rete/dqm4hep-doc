@@ -12,7 +12,7 @@ This system is composed of only two classes and a registration macro :
 - **dqm4hep::core::Plugin**, an internal class defining the interface for user plugins.
 - The **DQM_PLUGIN_DECL()** registration macro, called in user code to register plugins in shared libraries.
 
-In DQM4hep, a lot of components are implemented as plugins, such as [event streamer](event-streaming.md) and [quality test](quality-test.md) classes.
+In DQM4hep, a lot of components are implemented as plugins, such as [event streamer](event-interface.md) and [quality test](quality-test.md) classes.
 
 # Writing a plugin
 
