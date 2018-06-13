@@ -286,7 +286,7 @@ StatusCode MyReader::skipNEvents(int nevents) {
 ```  
 
 Very often, event data model libraries provides a mechanism to efficiently skip N events from a file without having to unpack events one by one as it done in the example above.
-The `runInfo()` instruct the reader to find the run information related to the file currently being read. If such an information is not available, it is still possible to provide dummy information.
+The `runInfo()` instructs the reader to find the run information related to the file currently being read. If this information is not available, it is still possible to provide dummy information.
 
 ```cpp
 StatusCode MyReader::runInfo(Run &runInfo) {
