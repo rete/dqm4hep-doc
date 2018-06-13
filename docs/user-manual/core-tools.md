@@ -249,10 +249,10 @@ enum StatusCode {
 };
 ```
 
-The *StatusCodeException* exception class handle one of these status codes on creation. Together with the StatusCode enum are also defined the following pre-processor macros:
+The *StatusCodeException* exception class handles one of these status codes on creation. Together with the StatusCode enum, there are also definitions for the following pre-processor macros:
 
-- *RETURN_RESULT_IF(code, Operator, Command)*: return the status code returned by the command if the comparison code with *code* using the operator *Operator* fails. See example below.
-- *RETURN_RESULT_IF_AND_IF(code, code2, Operator, Command)*: return the status code returned by the command if the comparison code with *code* and *code2* using the operator *Operator* fails.
+- *RETURN_RESULT_IF(code, Operator, Command)*: Runs the command, and returns its status code if the comparison with code using the operator is false. See example below.
+- *RETURN_RESULT_IF_AND_IF(code, code2, Operator, Command)*: Runs the command, and returns it's status code if the comparison with either code1 or code2 using the operator is false.
 - *THROW_RESULT_IF(code, Operator, Command)*: throw a *StatusCodeException* with the status code returned by the command if the comparison code with *code* using the operator *Operator* fails.
 - *THROW_RESULT_IF_AND_IF(code, code2, Operator, Command)*: throw a *StatusCodeException* with the status code returned by the command if the comparison code with *code* and *code2* using the operator *Operator* fails.
  
@@ -291,7 +291,7 @@ These macros are particuliarly useful to debug a huge stack trace by following t
 
 # The XML parser
 
-One of the nice components of the DQM4hep core library is the XML parser. It uses the [tinyxml](http://www.grinninglizard.com/tinyxml/) library to internally parse a XML document. On top of that comes a certain number of features that modifies the XML tree in memory after parsing listed below.
+One of the nice components of the DQM4hep core library is the XML parser. It uses the [tinyxml](http://www.grinninglizard.com/tinyxml/) library to internally parse an XML document. In addition, it comes with a number of features for modifying the XML tree in memory after parsing, listed below.
 
 ## XML parsing features
 
