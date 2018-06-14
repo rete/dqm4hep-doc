@@ -384,10 +384,6 @@ Example:
 </dqm4hep>
 ```
 
-### MySQL database parameter select
-
-To be done - requires documentation on MySQL parameter database and tables ...
-
 ### Use of environment variables
 
 Constants are a nice feature of the DQM4hep XML parser but can sometimes be a problem when users are dealing with passwords and other private sensitive data such as API tokens. Environment variables are often used to deal with this problem as they are defined locally in your shell and thus not accessible when opening the XML file in an editor. The XML parser can use environment variables by using a similar syntax as for constants (see above) with `$ENV{var}` where `var` is an environment variable.
